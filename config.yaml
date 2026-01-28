@@ -8,12 +8,12 @@ app:
   
 # Performance Profile
 performance:
-  profile: "light"  # light, standard (GPU)
+  profile: "lightweight"  # lightweight, standard (GPU)
   
 # Speech-to-Text (STT) Settings
 stt:
   whisper:
-    light:
+    lightweight:
       model_size: "small"
       device: "cpu"
       compute_type: "int8"

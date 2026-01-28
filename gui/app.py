@@ -6,7 +6,7 @@ Live Caption Application
 import sys
 from typing import Optional, Dict, Any
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 
 from core.controller import CaptionController
 from core.config_manager import ConfigManager
