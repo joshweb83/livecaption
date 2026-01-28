@@ -1,0 +1,61 @@
+name: Build Windows EXE
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0, v1.0.1 등의 태그가 푸시될 때 실행
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+      
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller LiveCaption.spec
+      
+      - name: Get version from tag
+        id: get_version
+        shell: bash
+        run: |
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=dev-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/LiveCaption.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload artifact (for manual runs)
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiveCaption-${{ steps.get_version.outputs.version }}
+          path: dist/LiveCaption.exe
+          retention-days: 30
