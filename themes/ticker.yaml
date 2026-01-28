@@ -1,0 +1,35 @@
+background:
+  border_radius: 0
+  color: '#0066CC'
+  opacity: 0.8
+caption:
+  english:
+    alignment: left
+    color: '#FFFF00'
+    font_family: Arial
+    font_size: 20
+    font_weight: normal
+  fade_duration: 0.2
+  korean:
+    alignment: left
+    color: '#FFFFFF'
+    font_family: 맑은 고딕
+    font_size: 22
+    font_weight: bold
+  max_lines: 1
+layout:
+  padding: 15
+  scroll: false
+  spacing: 20
+  type: horizontal
+theme:
+  description: 화면 하단 배너 형태
+  name: 뉴스 자막형
+  renderer: TickerRenderer
+window:
+  always_on_top: true
+  click_through: false
+  height: 80
+  opacity: 0.95
+  position: bottom
+  width: 1200

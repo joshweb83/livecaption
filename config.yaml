@@ -1,0 +1,70 @@
+# Live Caption Configuration File
+
+# Application Settings
+app:
+  name: "Live Caption"
+  version: "1.0.0"
+  author: "Manus AI"
+  
+# Performance Profile
+performance:
+  profile: "light"  # light, standard (GPU)
+  
+# Speech-to-Text (STT) Settings
+stt:
+  whisper:
+    light:
+      model_size: "small"
+      device: "cpu"
+      compute_type: "int8"
+      language: "ko"
+      vad_filter: true
+      beam_size: 5
+      
+    standard:
+      model_size: "large-v3-turbo"
+      device: "cuda"
+      compute_type: "float16"
+      language: "ko"
+      vad_filter: true
+      beam_size: 5
+      
+  # Audio Settings
+  audio:
+    sample_rate: 16000
+    chunk_duration: 3.0  # seconds
+    buffer_size: 1024
+    
+# Translation Settings
+translation:
+  model: "Helsinki-NLP/opus-mt-ko-en"
+  source_lang: "ko"
+  target_lang: "en"
+  max_length: 512
+  
+# GUI Settings
+gui:
+  default_theme: "panel"  # panel, transparent, ticker
+  
+  window:
+    always_on_top: true
+    click_through: false
+    draggable: true
+    resizable: true
+    
+  caption:
+    max_lines: 10
+    fade_duration: 0.5
+    animation_enabled: true
+    
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "logs/live_caption.log"
+  max_size: "10MB"
+  backup_count: 3
+  
+# Model Storage
+models:
+  cache_dir: "models/"
+  auto_download: true

@@ -1,0 +1,35 @@
+background:
+  border_radius: 10
+  color: '#000000'
+  opacity: 0.7
+caption:
+  english:
+    alignment: left
+    color: '#FFFF00'
+    font_family: Arial
+    font_size: 20
+    font_weight: normal
+  fade_duration: 0.5
+  korean:
+    alignment: left
+    color: '#FFFFFF'
+    font_family: 맑은 고딕
+    font_size: 24
+    font_weight: bold
+  max_lines: 10
+layout:
+  padding: 20
+  scroll: true
+  spacing: 10
+  type: vertical
+theme:
+  description: 우측 패널 형태의 자막
+  name: 패널형
+  renderer: PanelRenderer
+window:
+  always_on_top: true
+  click_through: false
+  height: 600
+  opacity: 0.9
+  position: right
+  width: 400
