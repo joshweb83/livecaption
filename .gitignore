@@ -47,7 +47,7 @@ logs/
 Thumbs.db
 
 # PyInstaller
-*.spec
+# *.spec  # Commented out - we want to keep LiveCaption.spec
 build/
 dist/
 
