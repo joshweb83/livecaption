@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 Live Caption - PyInstaller Spec File
-Version: 1.0.2
+Version: 1.0.3
 
 This file configures how PyInstaller builds the Windows executable.
 
@@ -10,35 +10,22 @@ At runtime, they are extracted to sys._MEIPASS temporary directory.
 The application must use sys._MEIPASS to access these files.
 """
 
-import os
-from pathlib import Path
-
 block_cipher = None
-
-# Get the directory where this spec file is located
-SPEC_DIR = os.path.dirname(os.path.abspath(SPECPATH))
 
 # Data files to include in the bundle
 # Format: (source, destination_in_bundle)
 # '.' means root of the bundle (sys._MEIPASS at runtime)
+# Note: Paths are relative to the spec file location
 datas = [
-    # Config file - placed at root of bundle
-    (os.path.join(SPEC_DIR, 'config.yaml'), '.'),
-    # Themes directory - maintains directory structure
-    (os.path.join(SPEC_DIR, 'themes'), 'themes'),
-    # README for reference
-    (os.path.join(SPEC_DIR, 'README.md'), '.'),
+    ('config.yaml', '.'),
+    ('themes', 'themes'),
+    ('README.md', '.'),
 ]
-
-# Verify data files exist before building
-for src, _ in datas:
-    if not os.path.exists(src):
-        raise FileNotFoundError(f"Required data file not found: {src}")
 
 # Analysis: Analyze the Python script and find all dependencies
 a = Analysis(
     ['main.py'],
-    pathex=[SPEC_DIR],
+    pathex=[],
     binaries=[],
     datas=datas,
     hiddenimports=[
@@ -107,16 +94,15 @@ exe = EXE(
     a.datas,
     [],
     name='LiveCaption',
-    debug=False,  # Set to True for debugging
+    debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,  # Compress with UPX for smaller file size
+    upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # No console window (GUI application)
+    console=False,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    # icon='assets/icon.ico',  # Uncomment when icon file is available
 )
