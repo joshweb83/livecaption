@@ -1,11 +1,36 @@
 """
 Theme Manager
 테마 로드 및 관리
+
+PyInstaller 환경에서의 파일 경로 처리:
+- 번들된 테마 파일은 sys._MEIPASS 디렉토리에 위치합니다.
+- get_resource_path() 함수를 사용하여 올바른 경로를 찾습니다.
 """
 
 import yaml
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+import sys
+
+
+def get_resource_path(relative_path: str) -> Path:
+    """
+    PyInstaller 환경에서 리소스 파일의 절대 경로를 반환합니다.
+    
+    Args:
+        relative_path: 상대 경로 (예: 'themes', 'themes/panel.yaml')
+        
+    Returns:
+        Path: 리소스 파일의 절대 경로
+    """
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # PyInstaller로 패키징된 경우: _MEIPASS 임시 디렉토리 사용
+        base_path = Path(sys._MEIPASS)
+    else:
+        # 일반 Python 스크립트: 이 파일이 있는 디렉토리의 부모 (프로젝트 루트)
+        base_path = Path(__file__).parent.parent
+    
+    return base_path / relative_path
 
 
 class ThemeManager:
@@ -25,20 +50,24 @@ class ThemeManager:
         
         self.themes: Dict[str, Dict[str, Any]] = {}
         self.current_theme: Optional[str] = None
-        self.themes_dir: Path = Path("themes")
+        self.themes_dir: Path = get_resource_path("themes")
         self._initialized = True
     
     def load_themes(self, themes_dir: str = "themes"):
         """
         테마 폴더에서 모든 테마 로드
         
+        PyInstaller 환경에서는 _MEIPASS 디렉토리에서 테마를 찾습니다.
+        
         Args:
-            themes_dir: 테마 폴더 경로
+            themes_dir: 테마 폴더 경로 (상대 경로)
         """
-        self.themes_dir = Path(themes_dir)
+        # PyInstaller 환경 대응
+        self.themes_dir = get_resource_path(themes_dir)
         
         if not self.themes_dir.exists():
-            self.themes_dir.mkdir(parents=True)
+            print(f"Warning: Themes directory not found: {self.themes_dir}")
+            # 기본 테마 생성 시도하지 않음 (PyInstaller 환경에서는 쓰기 불가)
             return
         
         # .yaml 파일 찾기
@@ -121,7 +150,17 @@ class ThemeManager:
         }
     
     def create_default_themes(self):
-        """기본 테마 생성 (테마 파일이 없을 때)"""
+        """
+        기본 테마 생성 (테마 파일이 없을 때)
+        
+        주의: PyInstaller 환경에서는 _MEIPASS에 쓰기가 불가능하므로,
+        이 함수는 개발 환경에서만 사용해야 합니다.
+        """
+        # PyInstaller 환경에서는 쓰기 불가
+        if getattr(sys, 'frozen', False):
+            print("Warning: Cannot create themes in PyInstaller environment")
+            return
+        
         default_themes = {
             'panel': self._create_panel_theme(),
             'transparent': self._create_transparent_theme(),

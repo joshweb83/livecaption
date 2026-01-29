@@ -1,12 +1,45 @@
 """
 Configuration Manager
 설정 파일 로드 및 관리
+
+PyInstaller 환경에서의 파일 경로 처리:
+- PyInstaller는 --onefile 모드에서 실행 시 임시 디렉토리(_MEIPASS)에 번들된 파일을 압축 해제합니다.
+- sys._MEIPASS를 사용하여 번들된 데이터 파일(config.yaml, themes/)에 접근해야 합니다.
+- sys.executable.parent는 EXE 파일이 있는 디렉토리이며, 번들된 파일이 아닌 외부 파일을 찾을 때 사용합니다.
 """
 
 import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional
 import os
+import sys
+
+
+def get_resource_path(relative_path: str) -> Path:
+    """
+    PyInstaller 환경에서 리소스 파일의 절대 경로를 반환합니다.
+    
+    PyInstaller --onefile 모드에서:
+    - 번들된 파일은 sys._MEIPASS 임시 디렉토리에 압축 해제됩니다.
+    - 이 함수는 해당 디렉토리에서 파일을 찾습니다.
+    
+    일반 Python 실행 시:
+    - 스크립트가 있는 디렉토리를 기준으로 파일을 찾습니다.
+    
+    Args:
+        relative_path: 상대 경로 (예: 'config.yaml', 'themes/panel.yaml')
+        
+    Returns:
+        Path: 리소스 파일의 절대 경로
+    """
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # PyInstaller로 패키징된 경우: _MEIPASS 임시 디렉토리 사용
+        base_path = Path(sys._MEIPASS)
+    else:
+        # 일반 Python 스크립트: 이 파일이 있는 디렉토리의 부모 (프로젝트 루트)
+        base_path = Path(__file__).parent.parent
+    
+    return base_path / relative_path
 
 
 class ConfigManager:
@@ -39,31 +72,34 @@ class ConfigManager:
         """
         설정 파일 로드
         
+        PyInstaller 환경에서는 _MEIPASS 디렉토리에서 번들된 config.yaml을 찾습니다.
+        
         Args:
-            config_path: 설정 파일 경로
+            config_path: 설정 파일 경로 (상대 경로 권장)
             
         Returns:
             Dict: 설정 딕셔너리
-        """
-        import sys
-        import os
-        
-        # PyInstaller 환경 대응: 실행 파일 디렉토리 기준으로 경로 설정
-        if not os.path.isabs(config_path):
-            if getattr(sys, 'frozen', False):
-                # PyInstaller로 패키징된 경우: 실행 파일이 있는 디렉토리
-                base_dir = Path(sys.executable).parent
-            else:
-                # 일반 Python 스크립트: 현재 작업 디렉토리
-                base_dir = Path.cwd()
             
-            self.config_path = base_dir / config_path
+        Raises:
+            FileNotFoundError: 설정 파일을 찾을 수 없는 경우
+        """
+        # 절대 경로가 아닌 경우, 리소스 경로 함수 사용
+        if not os.path.isabs(config_path):
+            self.config_path = get_resource_path(config_path)
         else:
             self.config_path = Path(config_path)
         
+        # 파일 존재 확인
         if not self.config_path.exists():
-            raise FileNotFoundError(f"Config file not found: {self.config_path}")
+            # 디버깅을 위한 상세 오류 메시지
+            error_msg = f"Config file not found: {self.config_path}\n"
+            error_msg += f"  - sys.frozen: {getattr(sys, 'frozen', False)}\n"
+            error_msg += f"  - sys._MEIPASS: {getattr(sys, '_MEIPASS', 'N/A')}\n"
+            error_msg += f"  - sys.executable: {sys.executable}\n"
+            error_msg += f"  - __file__: {__file__}\n"
+            raise FileNotFoundError(error_msg)
         
+        # YAML 파일 로드
         with open(self.config_path, 'r', encoding='utf-8') as f:
             self.config = yaml.safe_load(f)
         
@@ -125,6 +161,9 @@ class ConfigManager:
         """
         설정 파일 저장
         
+        주의: PyInstaller 환경에서는 _MEIPASS 디렉토리에 쓰기가 불가능합니다.
+        사용자 설정을 저장하려면 별도의 사용자 디렉토리를 사용해야 합니다.
+        
         Args:
             config_path: 저장할 파일 경로 (None이면 원본 경로)
         """
@@ -147,7 +186,7 @@ class ConfigManager:
             Dict: STT 설정
         """
         if profile is None:
-            profile = self.get('performance.profile', 'light')
+            profile = self.get('performance.profile', 'lightweight')
         
         stt_config = self.get(f'stt.whisper.{profile}', {})
         audio_config = self.get('stt.audio', {})
@@ -180,18 +219,18 @@ class ConfigManager:
         현재 성능 프로필 가져오기
         
         Returns:
-            str: 프로필 이름 ('light' 또는 'standard')
+            str: 프로필 이름 ('lightweight' 또는 'standard')
         """
-        return self.get('performance.profile', 'light')
+        return self.get('performance.profile', 'lightweight')
     
     def set_profile(self, profile: str):
         """
         성능 프로필 변경
         
         Args:
-            profile: 프로필 이름 ('light' 또는 'standard')
+            profile: 프로필 이름 ('lightweight' 또는 'standard')
         """
-        if profile not in ['light', 'standard']:
+        if profile not in ['lightweight', 'standard']:
             raise ValueError(f"Invalid profile: {profile}")
         
         self.set('performance.profile', profile)
@@ -204,3 +243,17 @@ class ConfigManager:
             Dict: 앱 정보
         """
         return self.get('app', {})
+
+
+# 테마 파일 로드를 위한 헬퍼 함수
+def get_theme_path(theme_name: str) -> Path:
+    """
+    테마 파일의 절대 경로를 반환합니다.
+    
+    Args:
+        theme_name: 테마 이름 (예: 'panel', 'transparent', 'ticker')
+        
+    Returns:
+        Path: 테마 파일의 절대 경로
+    """
+    return get_resource_path(f'themes/{theme_name}.yaml')
